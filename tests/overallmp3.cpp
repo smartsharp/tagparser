@@ -101,6 +101,7 @@ void OverallTests::checkMp3Testfile2()
     const auto tags = m_fileInfo.tags();
     switch (m_tagStatus) {
     case TagStatus::Original:
+    case TagStatus::TestMetaDataPresent:
         CPPUNIT_ASSERT(!m_fileInfo.id3v1Tag());
         CPPUNIT_ASSERT_EQUAL(1_st, m_fileInfo.id3v2Tags().size());
         CPPUNIT_ASSERT_EQUAL(1_st, tags.size());
@@ -124,22 +125,12 @@ void OverallTests::checkMp3Testfile2()
             default:;
             }
         }
-        CPPUNIT_ASSERT_GREATEREQUAL(2_st, m_diag.size());
-        CPPUNIT_ASSERT_EQUAL(DiagLevel::Warning, m_diag[0].level());
-        CPPUNIT_ASSERT_EQUAL(DiagLevel::Warning, m_diag[1].level());
-        CPPUNIT_ASSERT_EQUAL("parsing TCON frame"s, m_diag[1].context());
-        CPPUNIT_ASSERT_EQUAL(
-            "Multiple strings found. This is not supported so far. Hence the additional values \"Test\", \"Example\" and \"Hard Dance\" are ignored."s,
-            m_diag[1].message());
-        break;
-    case TagStatus::TestMetaDataPresent:
-        checkMp3TestMetaData();
         break;
     case TagStatus::Removed:
         CPPUNIT_ASSERT_EQUAL(0_st, tracks.size());
     }
 
-    CPPUNIT_ASSERT(m_diag.level() <= DiagLevel::Warning);
+    CPPUNIT_ASSERT(m_diag.level() <= DiagLevel::Information);
 }
 
 /*!
@@ -335,6 +326,8 @@ void OverallTests::testMp3Making()
         m_tagStatus = (m_mode & RemoveTag) ? TagStatus::Removed : TagStatus::TestMetaDataPresent;
         void (OverallTests::*modifyRoutine)(void) = (m_mode & RemoveTag) ? &OverallTests::removeAllTags : &OverallTests::setMp3TestMetaData;
         makeFile(TestUtilities::workingCopyPath("mtx-test-data/mp3/id3-tag-and-xing-header.mp3"), modifyRoutine, &OverallTests::checkMp3Testfile1);
+        makeFile(TestUtilities::workingCopyPath("misc/multiple_id3v2_4_values.mp3"),
+            (m_mode & RemoveTag) ? &OverallTests::removeAllTags : &OverallTests::noop, &OverallTests::checkMp3Testfile2);
     }
 }
 #endif
